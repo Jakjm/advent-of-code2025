@@ -7,9 +7,10 @@ pub fn problem_two(filename: &str) -> i64{
     if file_result.is_err() {
         return -1; 
     }
-    let mut reader = BufReader::new(file_result.unwrap());
+    let reader = BufReader::new(file_result.unwrap());
     let all_lines: Vec<String> = reader.lines().filter_map(|r| r.ok()).collect();
 
+    let mut column_widths = Vec::<usize>::new();
     //The best approach to solving this would probably be to do a first pass over all lines, 
     //during which I can calculate the cell of maximum width for each column.
 
@@ -17,18 +18,63 @@ pub fn problem_two(filename: &str) -> i64{
     //exact width of the maximum width of its column.
 
     //Store a vector containing sums/products of the values in each column
-    //let mut nums = Vec::<Vec<i64>>::new();
-    let mut _total: i64 = 0;
-    for line in all_lines{
+    for line in all_lines.iter() {
         let tokens:Vec<&str> = line.split_whitespace().collect();
-        let first_token = tokens[0].trim();
-
-        for token in tokens.iter(){
-            print!("`{}` ", token);
+        if column_widths.len() < tokens.len(){
+            column_widths.resize(tokens.len(),0);
+        }
+        for (token,column_width) in tokens.into_iter().zip(column_widths.iter_mut()) {
+            if token.len() > *column_width {
+                *column_width = token.len();
+            }
+        }
+    }
+    
+    let mut total: i64 = 0;
+    //Contains a vector of the numbers for each column.
+    let mut nums = Vec::<Vec<i64>>::with_capacity(column_widths.len());
+    for column_width in column_widths.iter() {
+        //Each vector has as many numbers as there are digits in the width...
+        let mut num_vec = Vec::<i64>::with_capacity(*column_width);
+        num_vec.resize(*column_width, 0);
+        nums.push(num_vec);
+    }
+    //Iterate over each line...
+    for (line_no,line) in all_lines.iter().enumerate(){
+        let mut rest = line.clone();
+        print!("Line {}: ",line_no);
+        for (width,num_vec) in column_widths.iter().zip(nums.iter_mut())
+        {
+            let (cell,mut right) = rest.split_at_mut(*width);
+            let trimmed = cell.trim();
+            print!("{} ", cell);
+            if trimmed == "*" || trimmed == "+" {
+                let (mut product, mut sum) : (i64,i64) = (1,0);
+                for v in num_vec.iter() {
+                    print!("{} ", v);
+                    product *= v;
+                    sum += *v;
+                }
+                total += if trimmed == "*" { product } else { sum };
+                println!("({})",if trimmed == "*" { product } else { sum });
+            }
+            else{
+                for (ch,v) in cell.chars().rev().zip(num_vec.iter_mut()) {
+                    if '0' as i64 <= ch as i64 && ch as i64 <= '9' as i64 {
+                        let digit = ch as i64 - '0' as i64;
+                        *v = (*v * 10) + digit;
+                    }
+                }
+            }
+            //Trim extra space before starting next line.
+            if right.starts_with(" "){
+                (_, right) = right.split_at_mut(1);
+            }
+            rest = right.to_string();
         }
         println!();
     }
-    return _total;
+    return total;
 }
 pub fn problem_one(filename: &str) -> i64{
     let path = Path::new(&filename);
@@ -63,18 +109,13 @@ pub fn problem_one(filename: &str) -> i64{
         }
         else{
             for (token,(sum,product)) in tokens.iter().zip(results.iter()){
-                if *token == "+" {
-                    total += *sum;
-                }
-                else{
-                    total += *product;
-                }
+                total += if *token == "+" { *sum } else { *product };
             }
         }
     }
     return total;
 }
 fn main() {
-    let result = problem_two("input2.txt");
+    let result = problem_two("input.txt");
     println!("{}",result);
 }
