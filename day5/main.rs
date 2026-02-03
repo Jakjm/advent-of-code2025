@@ -24,29 +24,18 @@ pub fn problem_one_nightly(filename: &str) -> i64{
             let mut range_start = tokens[0].to_string().trim().parse::<i64>().unwrap();
             let mut range_end = tokens[1].to_string().trim().parse::<i64>().unwrap();
 
-            //Search for a range whose start is the furthest to the right but still <= range_start
-            let mut cursor = ranges.upper_bound_mut( Bound::Included(&range_start) );
-            let mut key_value_opt = cursor.peek_prev();
-
-            if let Some((key,value)) = key_value_opt {
-                //If value >= range_start, we have an overlap
-                if *value >= range_start {
+            //Search for the gap before the smallest key that is greater than range_end
+            let mut cursor = ranges.lower_bound_mut( Bound::Excluded(&range_end) );
+            let mut key_value_opt = cursor.prev();
+            while let Some((key,value)) = key_value_opt && *key <= range_end && *value >= range_start {
+                if *value > range_end {
+                    range_end = *value;
+                }
+                if *key < range_start {
                     range_start = *key;
-                    if *value > range_end 
-                    {
-                        range_end = *value;
-                    }
-                    cursor.remove_prev();
                 }
-                key_value_opt = cursor.next();
-                while let Some((key,value)) = key_value_opt && *key <= range_end && *value >= range_start {
-                    if *value > range_end 
-                    {
-                        range_end = *value;
-                    }
-                    cursor.remove_prev();       
-                    key_value_opt = cursor.next();
-                }
+                cursor.remove_next();
+                key_value_opt = cursor.prev();
             }
             ranges.insert(range_start, range_end);
         }
@@ -195,9 +184,9 @@ pub fn problem_two(filename: &str) -> i64{
     return total;
 }
 fn main() {
-    // let result = problem_one_nightly("input.txt");
-    // let result_original = problem_one("input.txt");
-    // println!("{} {}",result, result_original);
+    let result = problem_one_nightly("input.txt");
+    let result_original = problem_one("input.txt");
+    println!("{} {}",result, result_original);
 
 
     let result = problem_two_nightly("input.txt");
