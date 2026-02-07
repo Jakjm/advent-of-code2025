@@ -81,42 +81,59 @@ pub fn sum_slice(goal_vec: &mut Vec<i64>, nums_vec: &[i64]) -> Option<usize> {
         let mut stack = Vec::<usize>::new();
         stack.push(0);
 
-        while stack.len() > 0 {
-            let mut exhausted = false;
 
-            let mut potential_min = Some(stack.len());
-            for i in 0..goal_vec.len()
-            {
-                let prev = nums_vec[stack[stack.len() - 1] as usize];
-                goal_vec[i] -=  (prev >> i) & 1;
-                if goal_vec[i] != 0 {
+        while stack.len() > 0 {
+            let mut stack_len = stack.len();
+            let mut back = stack[stack_len - 1];
+            let mut num = nums_vec[back];
+
+            let mut potential_min = Some(stack_len);
+            let mut needs_pop = false;
+            //println!("Stack: {:?}", stack);
+            for (ct, goal) in goal_vec.iter_mut().enumerate() {
+                let old_value = *goal;
+                let new_value = old_value - ((num >> ct) & 1);
+                *goal = new_value;
+                //println!("{}: {} -> {}  ", ct, old_value, new_value);
+
+
+                if new_value != 0 {
                     potential_min = None;
-                    if goal_vec[i] < 0 || (((prev >> i) & 1) == 0) {
-                        exhausted = true;
+
+                    if new_value < 0 {
+                        needs_pop = true;
                     }
                 }
             }
+            //println!();
+            
             if potential_min.is_some() {
                 if min.is_none() || potential_min.unwrap() < min.unwrap() {
                     min = potential_min;
                 }
             }
-            else if exhausted {
+
+            if needs_pop {
                 while stack.len() > 0 {
-                    let prev_index = stack.len() - 1;
-                    let prev = stack[prev_index];
-                    for i in 0..goal_vec.len()
-                    {
-                        goal_vec[i] += (nums_vec[prev] >> i) & 1; 
+                    stack_len = stack.len();
+                    back = stack[stack_len - 1];
+                    num = nums_vec[back];
+
+                    for (ct, goal) in goal_vec.iter_mut().enumerate() {
+                        *goal += (num >> ct) & 1;
                     }
-                    if prev < nums_vec.len() - 1 {
-                        stack[prev_index] = prev + 1;
+                    
+                    if back < nums_vec.len() - 1 {
+                        stack[stack_len - 1] = back + 1;
                         break;
                     }
-                    else {
+                    else{
                         stack.pop();
                     }
-                }
+                }   
+            }
+            else {
+                stack.push(back);
             }
         }
     }
@@ -145,13 +162,11 @@ pub fn problem_two(filename: &str) -> usize{
                 let (token,_) = token.split_at(token.len() - 1);
                 
                 let nums = token.split(",");
-
                 let mut new_num = 0 as i64;
                 for num in nums.into_iter() {
                     let num = num.trim().parse::<i64>().unwrap();
                     new_num += (1 as i64) << num;
                 }
-
                 nums_vec.push(new_num);
             }
 
@@ -164,11 +179,12 @@ pub fn problem_two(filename: &str) -> usize{
             let nums = last.split(",");
             for num in nums.into_iter() {
                 let num = num.trim().parse::<i64>().unwrap();
-                goal_vec.push((1 as i64) << num);
+                goal_vec.push(num);
             }
 
-            let result = sum_slice(&mut goal_vec, &nums_vec).unwrap();
+            let result = sum_slice(&mut goal_vec, &nums_vec).unwrap_or(19090909);
             total += result;
+            println!("Result: {}", result);
         }
     }
     
@@ -176,6 +192,6 @@ pub fn problem_two(filename: &str) -> usize{
 }
 fn main() {
     //env::set_var("RUST_BACKTRACE", "full");
-    let result = problem_two("input2.txt");
+    let result = problem_two("input.txt");
     println!("{}",result);
 }
