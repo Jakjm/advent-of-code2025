@@ -9,6 +9,7 @@ pub fn lame_heuristic(width: usize, height: usize, amounts: Vec<usize>, shapes: 
 
     let mut total_sqs = 0;
     let mut total_shapes = 0;
+    let num_three_by_three_sqs = (width / 3) * (height / 3);
     for (index, amount) in amounts.iter().enumerate() {
         total_sqs += amount * shapes[index].1;
         total_shapes += amount;
@@ -16,7 +17,7 @@ pub fn lame_heuristic(width: usize, height: usize, amounts: Vec<usize>, shapes: 
     if total_sqs > area {
         return 0;
     }
-    else if total_shapes * 9 <= area {
+    else if total_shapes <= num_three_by_three_sqs {
         return 1;
     }
     else {
